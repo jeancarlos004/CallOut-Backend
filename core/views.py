@@ -22,13 +22,34 @@ class RegisterView(generics.CreateAPIView):
     serializer_class = UserSerializer
     permission_classes = [permissions.AllowAny]
 
+from django.contrib.auth.models import User
+
+class AdminStatsView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def get(self, request):
+        total_users = User.objects.count()
+        total_blocked = BlockedCall.objects.count()
+        recent_blocks = BlockedCall.objects.order_by('-call_date', '-call_time')[:10]
+
+        serializer = BlockedCallSerializer(recent_blocks, many=True)
+
+        return Response({
+            'total_users': total_users,
+            'total_blocked_calls': total_blocked,
+            'recent_blocks': serializer.data
+        })
+
 class CustomAuthToken(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         token, created = Token.objects.get_or_create(user=user)
-        return Response({'token': token.key})
+        return Response({
+            'token': token.key,
+            'is_staff': user.is_staff
+        })
 
 class BlockedCallViewSet(viewsets.ModelViewSet):
     serializer_class = BlockedCallSerializer
