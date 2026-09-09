@@ -18,7 +18,9 @@ class ChatSerializer(serializers.Serializer):
     response = serializers.CharField(read_only=True)
 
 class BlockedCallSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+
     class Meta:
         model = BlockedCall
-        fields = '__all__'
+        fields = ('id', 'username', 'phone_number', 'call_date', 'call_time', 'latitude', 'longitude', 'location_name', 'block_reason')
         extra_kwargs = {'user': {'read_only': True}}
